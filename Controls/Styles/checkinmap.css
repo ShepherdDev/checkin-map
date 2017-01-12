@@ -1,0 +1,62 @@
+﻿.imagemap-container {
+    position: relative;
+    display: inline-block;
+}
+    .imagemap-container > img {
+        max-width: 100%;
+    }
+
+.imagemap-title {
+    display: block;
+    font-size: 1.1em;
+    font-weight: bold;
+    border-radius: 6px 6px 0px 0px;
+}
+
+.imagemap-text {
+    font-weight: normal;
+    line-height: initial;
+    margin: 4px;
+}
+
+.imagemap-button {
+    position: absolute;
+    min-width: 120px;
+    min-height: 50px;
+    border-radius: 6px;
+    color: white;
+    background-color: #428bca;
+}
+    .imagemap-button:hover, .imagemap-button:focus {
+        text-decoration: none;
+        color: white;
+    }
+    .imagemap-button.disabled:hover {
+        cursor: default;
+    }
+    .imagemap-button.disabled {
+        background-color: #c2c2c2;
+    }
+    .imagemap-button.imagemap-success {
+        background-color: #c2c2c2;
+    }
+
+    .imagemap-button.imagemap-danger .imagemap-title {
+        background-color: #e16969;
+    }
+    .imagemap-button.imagemap-warning .imagemap-title {
+        background-color: #dbd669;
+    }
+    .imagemap-button.imagemap-success .imagemap-title {
+        background-color: #6cdb69;
+    }
+    .imagemap-button.disabled .imagemap-title {
+        background-color: #b2b2b2;
+    }
+
+span.imagemap-button {
+    cursor: default;
+}
+.imagemap-container.editable .imagemap-button {
+    cursor: grab;
+}
