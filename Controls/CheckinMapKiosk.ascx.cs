@@ -168,6 +168,7 @@ The following variables are defined:<br />
                 if ( !string.IsNullOrWhiteSpace( group.GetAttributeValue( "Background" ) ) )
                 {
                     imgImageMap.Src = string.Format( "{0}?guid={1}", System.Web.VirtualPathUtility.ToAbsolute( "~/GetImage.ashx" ), group.GetAttributeValue( "Background" ) );
+                    imgImageMap.Visible = true;
 
                     List<ImageMapItem> items = new List<ImageMapItem>();
                     foreach ( var grp in group.Groups )
