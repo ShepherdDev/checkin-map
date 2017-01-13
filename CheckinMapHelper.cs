@@ -51,13 +51,16 @@ namespace com.shepherdchurch.CheckinMap
         {
             int count = 0;
 
-            if ( group.Attributes == null )
+            if ( group.GroupLocations.SelectMany( gl => gl.Schedules ).Where( s => s.IsCheckInActive ).Any() )
             {
-                group.LoadAttributes();
-            }
-            if ( group.GetAttributeValues( "Need" ).Count == 2 )
-            {
-                count += group.GetAttributeValues( "Need" )[0].AsInteger();
+                if ( group.Attributes == null )
+                {
+                    group.LoadAttributes();
+                }
+                if ( group.GetAttributeValues( "Need" ).Count == 2 )
+                {
+                    count += group.GetAttributeValues( "Need" )[0].AsInteger();
+                }
             }
 
             foreach ( Group grp in group.Groups )
@@ -77,13 +80,16 @@ namespace com.shepherdchurch.CheckinMap
         {
             int count = 0;
 
-            if ( group.Attributes == null )
+            if ( group.GroupLocations.SelectMany( gl => gl.Schedules ).Where( s => s.IsCheckInActive ).Any() )
             {
-                group.LoadAttributes();
-            }
-            if ( group.GetAttributeValues( "Need" ).Count == 2 )
-            {
-                count += group.GetAttributeValues( "Need" )[1].AsInteger();
+                if ( group.Attributes == null )
+                {
+                    group.LoadAttributes();
+                }
+                if ( group.GetAttributeValues( "Need" ).Count == 2 )
+                {
+                    count += group.GetAttributeValues( "Need" )[1].AsInteger();
+                }
             }
 
             foreach ( Group grp in group.Groups )
@@ -115,10 +121,10 @@ namespace com.shepherdchurch.CheckinMap
                     count += GetNeedForGroup( grp );
                 }
             }
-            else
+            else if ( group.GroupLocations.SelectMany( gl => gl.Schedules ).Where( s => s.IsCheckInActive ).Any() )
             {
                 //
-                // This is a "need" group, load the attributes if needed and then calculate the need.
+                // This is a "need" group and check-in is active, load the attributes if needed and then calculate the need.
                 //
                 if ( group.Attributes == null )
                 {

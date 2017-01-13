@@ -148,6 +148,15 @@
       return actions;
     };
 
+    /* Replace the actions with those specified. */
+    this.setActions = function (actions)
+    {
+      var _this = this;
+
+      this.$container.find('.imagemap-button').remove();
+      actions.forEach(function (data) { _this.addAction(data); });
+    };
+
     /* Replace the original element with the container. */
     this.$container = $('<div class="imagemap-container"></div>').insertBefore(this.$el).append(this.$el);
     if (this.options.edit)

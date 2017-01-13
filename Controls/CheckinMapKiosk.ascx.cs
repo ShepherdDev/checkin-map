@@ -103,6 +103,27 @@ The following variables are defined:<br />
         /// <param name="e">Arguments that describe this event.</param>
         protected void Page_Load( object sender, EventArgs e )
         {
+            if ( !string.IsNullOrWhiteSpace( Request.QueryString["groupId"] ) && !string.IsNullOrWhiteSpace( Request.QueryString["json"] ) )
+            {
+                Group group = new GroupService( new RockContext() ).Get( Request.QueryString["groupId"].AsInteger() );
+                List<ImageMapItem> items = new List<ImageMapItem>();
+
+                foreach ( var grp in group.Groups )
+                {
+                    //
+                    // Setup the default information for the Map Item.
+                    //
+                    items.Add( CheckinMapHelper.GetImageMapItemForGroup( RockPage, grp, GetAttributeValue( "ContentTemplate" ), GetUrlForGroup ) );
+                }
+
+                Response.Clear();
+                Response.ContentType = "application/json";
+                Response.Write( JsonConvert.SerializeObject( items ) );
+                Response.End();
+
+                return;
+            }
+
             if ( !string.IsNullOrEmpty( PageParameter( "groupId" ) ) )
             {
                 _defaultGroupId = PageParameter( "groupId" ).AsInteger();
