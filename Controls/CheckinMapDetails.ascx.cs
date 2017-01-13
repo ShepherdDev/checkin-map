@@ -234,7 +234,7 @@ namespace RockWeb.Plugins.com_shepherdchurch.CheckinMap
                     //
                     // Setup the default information for the Map Item.
                     //
-                    items.Add( CheckinMapHelper.GetImageMapItemForGroup( grp, contentTemplate, null ) );
+                    items.Add( CheckinMapHelper.GetImageMapItemForGroup( RockPage, grp, contentTemplate, null ) );
                 }
 
                 hfMapData.Value = Convert.ToBase64String( Encoding.UTF8.GetBytes( JsonConvert.SerializeObject( items ) ) );
