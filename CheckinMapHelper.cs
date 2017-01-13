@@ -178,7 +178,7 @@ namespace com.shepherdchurch.CheckinMap
             servingItem.Have = GetAttendanceCountForGroup( group );
             servingItem.Minimum = GetMinimumNeedForGroup( group );
             servingItem.Maximum = GetMaximumNeedForGroup( group );
-            servingItem.Active = true;
+            servingItem.Active = ( servingItem.Minimum > 0 );
 
             if ( group.Groups.Count > 0 )
             {
@@ -220,6 +220,7 @@ namespace com.shepherdchurch.CheckinMap
             template.InstanceAssigns.Add( "Title", group.Name );
             template.InstanceAssigns.Add( "CssClass", string.Empty );
             template.InstanceAssigns.Add( "Item", servingItem );
+            template.InstanceAssigns.Add( "Url", item.Url );
 
             //
             // Run the lava and take the rendered output as the text for the block.
@@ -231,6 +232,7 @@ namespace com.shepherdchurch.CheckinMap
             //
             item.Title = template.InstanceAssigns["Title"].ToString();
             item.CssClass = template.InstanceAssigns["CssClass"].ToString();
+            item.Url = template.InstanceAssigns["Url"] != null ? template.InstanceAssigns["Url"].ToString() : null;
             item.PositionX = group.GetAttributeValue( "PositionX" );
             item.PositionY = group.GetAttributeValue( "PositionY" );
             item.Identifier = group.Guid.ToString();
