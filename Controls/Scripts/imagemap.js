@@ -78,7 +78,7 @@
       $block.addClass(data.class);
       this.$container.append($block);
 
-      $block.css('left', data.x + '%').css('top', data.y + '%');
+      $block.css('left', (data.x ? data.x : '0') + '%').css('top', (data.y ? data.y : '0') + '%');
       if (data.id)
       {
         $block.data('id', data.id);
