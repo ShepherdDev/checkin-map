@@ -33,7 +33,7 @@
                     /* Update the actions asynchronously. This keeps the button status up to date. */
                     function updateActions()
                     {
-                        var location = window.location.substr(0, window.location.indexOf('?'));
+                        var location = window.location.href.substr(0, window.location.href.indexOf('?'));
 
                         updateTimer = null;
                         $.getJSON(location + '?groupId=' + $('#<%= hfGroupId.ClientID %>').val() + '&json=1', function (data, status, xhr)
