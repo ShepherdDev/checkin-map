@@ -176,7 +176,7 @@ The following variables are defined:<br />
                         //
                         // Setup the default information for the Map Item.
                         //
-                        items.Add( CheckinMapHelper.GetImageMapItemForGroup( grp, GetAttributeValue( "ContentTemplate" ), GetUrlForGroup ) );
+                        items.Add( CheckinMapHelper.GetImageMapItemForGroup( RockPage, grp, GetAttributeValue( "ContentTemplate" ), GetUrlForGroup ) );
                     }
 
                     hfMapData.Value = Convert.ToBase64String( Encoding.UTF8.GetBytes( JsonConvert.SerializeObject( items ) ) );

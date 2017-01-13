@@ -3,7 +3,9 @@ using System.Linq;
 
 using DotLiquid;
 using Rock;
+using Rock.Lava;
 using Rock.Model;
+using Rock.Web.UI;
 
 namespace com.shepherdchurch.CheckinMap
 {
@@ -150,7 +152,7 @@ namespace com.shepherdchurch.CheckinMap
         /// <param name="contentTemplate">The Lava content to use.</param>
         /// <param name="urlMethod">The method to call to generate the URL for each child group. The boolean parameter passed is true if the child group is a serving position and false if it is another sub-area.</param>
         /// <returns>A new ImageMapItem instance that represents how the Group should be displayed on the Image Map.</returns>
-        static public ImageMapItem GetImageMapItemForGroup( Group group, string contentTemplate, Func<Group, bool, string> urlMethod )
+        static public ImageMapItem GetImageMapItemForGroup( RockPage rockPage, Group group, string contentTemplate, Func<Group, bool, string> urlMethod )
         {
             Template template;
             LavaItem servingItem = new LavaItem();
@@ -205,6 +207,10 @@ namespace com.shepherdchurch.CheckinMap
             // Setup the lava template to run with the variables we pass in.
             //
             template = Template.Parse( contentTemplate );
+            foreach ( var field in LavaHelper.GetCommonMergeFields( rockPage ) )
+            {
+                template.InstanceAssigns.Add( field.Key, field.Value );
+            }
             template.InstanceAssigns.Add( "Title", group.Name );
             template.InstanceAssigns.Add( "CssClass", string.Empty );
             template.InstanceAssigns.Add( "Item", servingItem );
