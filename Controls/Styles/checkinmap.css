@@ -21,11 +21,11 @@
 
 .imagemap-button {
     position: absolute;
-    min-width: 120px;
-    min-height: 50px;
+    min-width: 80px;
+    min-height: 40px;
     border-radius: 6px;
     color: white;
-    background-color: #428bca;
+    background-color: rgba(66, 139, 202, 0.75);
 }
     .imagemap-button:hover, .imagemap-button:focus {
         text-decoration: none;
@@ -35,23 +35,23 @@
         cursor: default;
     }
     .imagemap-button.disabled {
-        background-color: #c2c2c2;
+        background-color: rgba(194, 194, 194, 0.85);
     }
     .imagemap-button.imagemap-success {
-        background-color: #c2c2c2;
+        background-color: rgba(194, 194, 194, 0.85);
     }
 
     .imagemap-button.imagemap-danger .imagemap-title {
-        background-color: #e16969;
+        background-color: rgba(225, 105, 105, 0.75);
     }
     .imagemap-button.imagemap-warning .imagemap-title {
-        background-color: #dbd669;
+        background-color: rgba(219, 214, 105, 0.75);
     }
     .imagemap-button.imagemap-success .imagemap-title {
-        background-color: #6cdb69;
+        background-color: rgba(108, 219, 105, 0.75);
     }
     .imagemap-button.disabled .imagemap-title {
-        background-color: #b2b2b2;
+        background-color: rgba(178, 178, 178, 0.85);
     }
 
 span.imagemap-button {
