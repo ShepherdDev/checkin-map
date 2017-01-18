@@ -48,6 +48,12 @@ namespace com.shepherdchurch.CheckinMap
         public Group Group { get; set; }
 
         /// <summary>
+        /// Contains the list of unique Person ID numbers that are currently checked-in to this
+        /// group or its descendents.
+        /// </summary>
+        public IEnumerable<int> DistinctPersonIds { get; set; }
+
+        /// <summary>
         /// Convert this object into one that Liquid recognizes.
         /// </summary>
         /// <returns>A Dictionary that contains string keys pointing to object values.</returns>
@@ -62,6 +68,7 @@ namespace com.shepherdchurch.CheckinMap
             data.Add( "Have", Have );
             data.Add( "Active", Active );
             data.Add( "Group", Group );
+            data.Add( "DistinctPersonIds", DistinctPersonIds );
 
             return data;
         }

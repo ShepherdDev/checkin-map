@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 using DotLiquid;
@@ -40,6 +41,35 @@ namespace com.shepherdchurch.CheckinMap
             }
 
             return count;
+        }
+
+        /// <summary>
+        /// Get the attendance person Ids for the specified group. This returns only the unique PersonId
+        /// numbers.
+        /// </summary>
+        /// <param name="group">The group whose attendance counts we are interested in.</param>
+        /// <returns>The number of people currently checked-in to the group.</returns>
+        static public IEnumerable<int> GetAttendanceForGroup( Group group )
+        {
+            List<int> personIds = new List<int>();
+
+            foreach ( var location in group.GroupLocations )
+            {
+                var summary = Rock.CheckIn.KioskLocationAttendance.Read( location.LocationId );
+                var gSummary = summary.Groups.Where( g => g.GroupId == group.Id ).FirstOrDefault();
+
+                if ( gSummary != null )
+                {
+                    personIds.AddRange( gSummary.DistinctPersonIds );
+                }
+            }
+
+            foreach ( Group grp in group.Groups )
+            {
+                personIds.AddRange( GetAttendanceForGroup( grp ) );
+            }
+
+            return personIds.Distinct();
         }
 
         /// <summary>
@@ -178,6 +208,7 @@ namespace com.shepherdchurch.CheckinMap
             servingItem.Have = GetAttendanceCountForGroup( group );
             servingItem.Minimum = GetMinimumNeedForGroup( group );
             servingItem.Maximum = GetMaximumNeedForGroup( group );
+            servingItem.DistinctPersonIds = GetAttendanceForGroup( group );
             servingItem.Active = ( servingItem.Minimum > 0 );
 
             if ( group.Groups.Count > 0 )

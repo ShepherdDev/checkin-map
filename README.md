@@ -50,6 +50,9 @@ and the new values will be used after your Lava has finished running.
   - Need - Number of spots that still need to be filled.
   - Have - Number of spots that have been filled.
   - Active - "true" if check-in is active for this group, "false" otherwise.
+  - DistinctPersonIds - Array of Id numbers for the people that are
+    checked-in to this position or area. Use the `PersonById` filter to
+    load the entire person object.
   - Group - The Group object for this item.
 
 We also mentioned the body text of the button. Any text that is rendered out
