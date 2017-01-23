@@ -45,21 +45,27 @@ namespace RockWeb.Plugins.com_shepherdchurch.ServingMap
         {
             if ( !IsPostBack )
             {
+                bool didAttend = true;
+                int groupId = PageParameter( "groupId" ).AsInteger();
+                int personId = PageParameter( "personId" ).AsInteger();
+
                 if ( string.IsNullOrEmpty( GetAttributeValue( "RedirectPage" ) ) && string.IsNullOrEmpty( GetAttributeValue( "Lava" ) ) )
                 {
                     nbWarning.Text = "Block has not been configured.";
                     return;
                 }
 
-                if ( !string.IsNullOrWhiteSpace( PageParameter( "personId" ) ) )
+                if ( groupId == 0 )
                 {
-                    RecordAttendance( PageParameter( "groupId" ).AsInteger(), PageParameter( "personId" ).AsInteger() );
+                    nbWarning.Text = "Incorrect parameters supplied. groupId is required.";
+                    return;
                 }
-                else
+
+                if ( personId == 0 )
                 {
                     if ( GetAttributeValue( "UseCurrentPerson" ).AsBoolean() == true && CurrentPerson != null )
                     {
-                        RecordAttendance( PageParameter( "groupId" ).AsInteger(), CurrentPerson.Id );
+                        personId = CurrentPerson.Id;
                     }
                     else
                     {
@@ -67,6 +73,13 @@ namespace RockWeb.Plugins.com_shepherdchurch.ServingMap
                         return;
                     }
                 }
+
+                if ( !string.IsNullOrWhiteSpace( PageParameter( "attended" ) ) )
+                {
+                    didAttend = PageParameter( "attended" ) == "1";
+                }
+
+                RecordAttendance( groupId, personId, didAttend );
             }
         }
 
@@ -79,7 +92,8 @@ namespace RockWeb.Plugins.com_shepherdchurch.ServingMap
         /// </summary>
         /// <param name="groupId">The Id of the group to take attendance for.</param>
         /// <param name="personId">The Id of the person to take attendance for.</param>
-        void RecordAttendance( int groupId, int personId )
+        /// <param name="didAttend">True if the person should be marked as attended, false otherwise.</param>
+        void RecordAttendance( int groupId, int personId, bool didAttend )
         {
             RockContext rockContext = new RockContext();
             GroupService groupService = new GroupService( rockContext );
@@ -132,7 +146,7 @@ namespace RockWeb.Plugins.com_shepherdchurch.ServingMap
 
                 attendance.StartDateTime = date;
                 attendance.EndDateTime = null;
-                attendance.DidAttend = true;
+                attendance.DidAttend = didAttend;
 
                 if ( attendance.LocationId.HasValue )
                 {
