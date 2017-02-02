@@ -49,7 +49,7 @@ namespace RockWeb.Plugins.com_shepherdchurch.ServingMap
                 int groupId = PageParameter( "groupId" ).AsInteger();
                 int personId = PageParameter( "personId" ).AsInteger();
 
-                if ( string.IsNullOrEmpty( GetAttributeValue( "RedirectPage" ) ) && string.IsNullOrEmpty( GetAttributeValue( "Lava" ) ) )
+                if ( string.IsNullOrEmpty( GetAttributeValue( "RedirectPage" ) ) && string.IsNullOrEmpty( GetAttributeValue( "Message" ) ) )
                 {
                     nbWarning.Text = "Block has not been configured.";
                     return;
@@ -129,9 +129,22 @@ namespace RockWeb.Plugins.com_shepherdchurch.ServingMap
                 }
 
                 //
-                // Get an existing attendance record or create a new one.
+                // Get an existing attendance record or create a new one. The out of box method
+                // does not support nullable LocationID or ScheduleId even though the database
+                // itself supports them. So we have to duplicate the code in AttendanceService.Get()
+                // to support the nullable types.
                 //
-                var attendance = attendanceService.Get( date, ( locationId ?? 0 ), ( scheduleId ?? 0 ), group.Id, personId );
+                DateTime beginDate = date.Date;
+                DateTime endDate = beginDate.AddDays( 1 );
+                var attendance = attendanceService.Queryable( "Group,Schedule,PersonAlias.Person" )
+                    .Where( a =>
+                        a.StartDateTime >= beginDate &&
+                        a.StartDateTime < endDate &&
+                        a.LocationId == locationId &&
+                        a.ScheduleId == scheduleId &&
+                        a.GroupId == groupId &&
+                        a.PersonAlias.PersonId == personId )
+                    .FirstOrDefault();
                 if ( attendance == null )
                 {
                     attendance = rockContext.Attendances.Create();
@@ -167,7 +180,7 @@ namespace RockWeb.Plugins.com_shepherdchurch.ServingMap
                     mergeFields.Add( "Group", group );
                     mergeFields.Add( "Person", person );
 
-                    ltContent.Text = template.ResolveMergeFields( mergeFields );
+                    nbSuccess.Text = template.ResolveMergeFields( mergeFields );
                 }
             }
             else
@@ -206,16 +219,6 @@ namespace RockWeb.Plugins.com_shepherdchurch.ServingMap
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void Block_BlockUpdated( object sender, EventArgs e )
         {
-        }
-
-        /// <summary>
-        /// Handles the Click event of the control.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
-        protected void btnDone_Click( object sender, EventArgs e )
-        {
-            NavigateToLinkedPage( "RedirectPage" );
         }
 
         #endregion
