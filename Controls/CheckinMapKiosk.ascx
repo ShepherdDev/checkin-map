@@ -33,6 +33,7 @@
 
                 (function ($) {
                     var updateTimer = null;
+                    var updateAjax = null;
 
                     /* Update the actions asynchronously. This keeps the button status up to date. */
                     function updateActions()
@@ -40,11 +41,12 @@
                         var location = window.location.href.substr(0, window.location.href.indexOf('?'));
 
                         updateTimer = null;
-                        $.getJSON(location + '?groupId=' + $('#<%= hfGroupId.ClientID %>').val() + '&json=1', function (data, status, xhr)
+                        updateAjax = $.getJSON(location + '?groupId=' + $('#<%= hfGroupId.ClientID %>').val() + '&json=1', function (data, status, xhr)
                         {
                             $('#<%= imgImageMap.ClientID %>').ImageMap('setActions', data);
 
                             updateTimer = setTimeout(updateActions, 15000);
+                            updateAjax = null;
                         });
                     }
 
@@ -57,8 +59,16 @@
 
                     Sys.WebForms.PageRequestManager.getInstance().add_beginRequest(function ()
                     {
-                        clearTimeout(updateTimer);
-                        updateTimer = null;
+                        if (updateAjax != null)
+                        {
+                            updateAjax.abort();
+                            updateAjax = null;
+                        }
+                        if (updateTimer != null)
+                        {
+                            clearTimeout(updateTimer);
+                            updateTimer = null;
+                        }
                     });
 
                     Sys.WebForms.PageRequestManager.getInstance().add_endRequest(function ()
