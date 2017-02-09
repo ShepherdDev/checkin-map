@@ -28,6 +28,7 @@ namespace RockWeb.Plugins.com_shepherdchurch.CheckinMap
     [LinkedPage( "Serve Page", "The page to link the user to when they click on an available serving position. The group they click on is passed as 'groupId'.", false, order: 1 )]
     [GroupField( "Default Group", "The default group/area to display when the user first hits this page if nothing else is defined.", false, order: 2 )]
     [BooleanField( "Kiosk Mode", "Include the scripts to make working on a kiosk (touchscreen) more effective. Can cause problems for desktop browsers.", true, order: 3 )]
+    [IntegerField( "Refresh Time", "The delay in seconds between data refreshes. This does not reload the entire page, it simply issues a AJAX request to get the latest data to display on the map.", true, 15, order: 4 )]
     [CodeEditorField( "Content Template", @"The lava that is run to generate the content. Rendered content is used for the text.
 Assign the variables Title and CssClass to set the Title and CssClass to use for the content block.<br />
 The following variables are defined:<br />
@@ -54,7 +55,7 @@ The following variables are defined:<br />
  {%- assign CssClass = 'imagemap-warning' -%}
 {%- else -%}
  {%- assign CssClass = 'imagemap-success' -%}
-{%- endif -%}", order: 4 )]
+{%- endif -%}", order: 5 )]
 
     #endregion
 
@@ -84,6 +85,7 @@ The following variables are defined:<br />
             {
                 RockPage.AddScriptLink( "~/Scripts/iscroll.js" );
                 RockPage.AddScriptLink( "~/Scripts/Kiosk/kiosk-core.js" );
+                pnlImageMap.AddCssClass( "kiosk-body" );
             }
 
             RockPage.AddScriptLink( "~/Plugins/com_shepherdchurch/CheckinMap/Scripts/imagemap.js" );

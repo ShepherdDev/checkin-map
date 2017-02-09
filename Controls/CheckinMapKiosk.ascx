@@ -2,26 +2,62 @@
 
 <asp:UpdatePanel ID="upnlContent" runat="server">
     <ContentTemplate>
+        <style type="text/css">
+            .kiosk-body
+            {
+                position: absolute;
+                left: 0px;
+                top: 0px;
+                width: 100%;
+                height: 100%;
+            }
+            .kiosk-body .container {
+                width: 100%;
+            }
+            footer {
+                width: 100%;
+                padding-top: 15px;
+            }
+
+            @media (min-width: 768px)
+            {
+                .kiosk-phone-keypad {
+                    text-align: left;
+                }
+            }
+            @media (max-width: 767px)
+            {
+                .btn-kiosk {
+                    font-size: 22px;
+                }
+                header h1 {
+                    font-size: 28px;
+                    margin-top: 15px;
+                }
+            }
+        </style>
+
         <asp:Panel ID="pnl" runat="server" CssClass="js-kioskscrollpanel">
             <asp:HiddenField ID="hfGroupId" runat="server" />
 
-            <header>
+            <header class="container">
                 <h1 id="hHeader" runat="server"></h1>
             </header>
 
            <main class="clearfix js-scrollcontainer">
                 <div class="scrollpanel">
                     <div class="scroller">
-                        <div style="text-align: center;">
+                        <asp:Panel ID="pnlImageMap" runat="server" style="text-align: center;">
                             <img id="imgImageMap" runat="server" style="max-width: 100%;" src="." />
-                        </div>
+                        </asp:Panel>
                         <asp:LinkButton ID="lbSelectGroup" runat="server" OnCommand="lbSelectGroup_Command" Text="Test" CssClass="hidden" />
                     </div>
                 </div>
             </main>
 
-            <footer>
+            <footer class="container">
                 <asp:LinkButton ID="lbBack" runat="server" OnClick="lbBack_Click" CssClass="btn btn-default btn-kiosk">Back</asp:LinkButton>
+                <a href="#" class="pull-right btn-kiosk btn btn-danger">Test</a>
             </footer>
 
             <asp:HiddenField ID="hfMapData" runat="server" />
@@ -45,17 +81,10 @@
                         {
                             $('#<%= imgImageMap.ClientID %>').ImageMap('setActions', data);
 
-                            updateTimer = setTimeout(updateActions, 15000);
+                            updateTimer = setTimeout(updateActions, <%= GetAttributeValue( "RefreshTime" ) %> * 1000);
                             updateAjax = null;
                         });
                     }
-
-                    $(document).ready(function () {
-                        var actions = JSON.parse(window.Base64.decode($('#<%= hfMapData.ClientID %>').val()));
-                        $('#<%= imgImageMap.ClientID %>').ImageMap({ edit: false, actions: actions });
-
-                        updateTimer = setTimeout(updateActions, 15000);
-                    });
 
                     Sys.WebForms.PageRequestManager.getInstance().add_beginRequest(function ()
                     {
@@ -71,18 +100,18 @@
                         }
                     });
 
-                    Sys.WebForms.PageRequestManager.getInstance().add_endRequest(function ()
+                    Sys.WebForms.PageRequestManager.getInstance().add_load(function ()
                     {
                         var actions = JSON.parse(window.Base64.decode($('#<%= hfMapData.ClientID %>').val()));
                         $('#<%= imgImageMap.ClientID %>').ImageMap({ edit: false, actions: actions });
 
-                        updateTimer = setTimeout(updateActions, 15000);
+                        updateTimer = setTimeout(updateActions, <%= GetAttributeValue( "RefreshTime" ) %> * 1000);
                     });
                 })(jQuery);
 
                 function imgImageMapLoaded()
                 {
-                    if (bodyScroll)
+                    if (typeof bodyScroll !== 'undefined' && bodyScroll)
                     {
                         bodyScroll.refresh();
                     }
