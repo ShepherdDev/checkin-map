@@ -99,7 +99,7 @@
                         }
                     });
 
-                    Sys.WebForms.PageRequestManager.getInstance().add_load(function ()
+                    Sys.WebForms.PageRequestManager.getInstance().add_pageLoaded(function ()
                     {
                         var actions = JSON.parse(window.Base64.decode($('#<%= hfMapData.ClientID %>').val()));
                         $('#<%= imgImageMap.ClientID %>').ImageMap({ edit: false, actions: actions });
