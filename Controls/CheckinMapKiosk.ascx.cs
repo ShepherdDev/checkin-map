@@ -85,7 +85,7 @@ The following variables are defined:<br />
             {
                 RockPage.AddScriptLink( "~/Scripts/iscroll.js" );
                 RockPage.AddScriptLink( "~/Scripts/Kiosk/kiosk-core.js" );
-                pnlImageMap.AddCssClass( "kiosk-body" );
+                pnlBody.AddCssClass( "kiosk-body" );
             }
 
             RockPage.AddScriptLink( "~/Plugins/com_shepherdchurch/CheckinMap/Scripts/imagemap.js" );

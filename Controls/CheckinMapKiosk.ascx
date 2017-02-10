@@ -37,7 +37,7 @@
             }
         </style>
 
-        <asp:Panel ID="pnl" runat="server" CssClass="js-kioskscrollpanel">
+        <asp:Panel ID="pnlBody" runat="server" CssClass="js-kioskscrollpanel">
             <asp:HiddenField ID="hfGroupId" runat="server" />
 
             <header class="container">
@@ -47,9 +47,9 @@
            <main class="clearfix js-scrollcontainer">
                 <div class="scrollpanel">
                     <div class="scroller">
-                        <asp:Panel ID="pnlImageMap" runat="server" style="text-align: center;">
+                        <div style="text-align: center;">
                             <img id="imgImageMap" runat="server" style="max-width: 100%;" src="." />
-                        </asp:Panel>
+                        </div>
                         <asp:LinkButton ID="lbSelectGroup" runat="server" OnCommand="lbSelectGroup_Command" Text="Test" CssClass="hidden" />
                     </div>
                 </div>
