@@ -57,7 +57,6 @@
 
             <footer class="container">
                 <asp:LinkButton ID="lbBack" runat="server" OnClick="lbBack_Click" CssClass="btn btn-default btn-kiosk">Back</asp:LinkButton>
-                <a href="#" class="pull-right btn-kiosk btn btn-danger">Test</a>
             </footer>
 
             <asp:HiddenField ID="hfMapData" runat="server" />
