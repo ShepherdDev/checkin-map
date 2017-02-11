@@ -22,25 +22,7 @@ namespace com.shepherdchurch.CheckinMap
         /// <returns>The number of people currently checked-in to the group.</returns>
         static public int GetAttendanceCountForGroup( Group group )
         {
-            int count = 0;
-
-            foreach ( var location in group.GroupLocations )
-            {
-                var summary = Rock.CheckIn.KioskLocationAttendance.Read( location.LocationId );
-                var gSummary = summary.Groups.Where( g => g.GroupId == group.Id ).FirstOrDefault();
-
-                if ( gSummary != null )
-                {
-                    count += gSummary.CurrentCount;
-                }
-            }
-
-            foreach ( Group grp in group.Groups )
-            {
-                count += GetAttendanceCountForGroup( grp );
-            }
-
-            return count;
+            return GetAttendanceForGroup( group ).Count();
         }
 
         /// <summary>
@@ -49,85 +31,32 @@ namespace com.shepherdchurch.CheckinMap
         /// </summary>
         /// <param name="group">The group whose attendance counts we are interested in.</param>
         /// <returns>The number of people currently checked-in to the group.</returns>
-        static public IEnumerable<int> GetAttendanceForGroup( Group group )
+        static public IEnumerable<int> GetAttendanceForGroup( Group group, List<int> personIds = null )
         {
-            List<int> personIds = new List<int>();
+            if ( personIds == null )
+            {
+                personIds = new List<int>();
+            }
 
             foreach ( var location in group.GroupLocations )
             {
                 var summary = Rock.CheckIn.KioskLocationAttendance.Read( location.LocationId );
-                var gSummary = summary.Groups.Where( g => g.GroupId == group.Id ).FirstOrDefault();
 
-                if ( gSummary != null )
-                {
-                    personIds.AddRange( gSummary.DistinctPersonIds );
-                }
+                var people = summary
+                    .Groups
+                    .Where( g => g.GroupId == group.Id )
+                    .SelectMany( g => g.Schedules )
+                    .SelectMany( s => s.PersonIds );
+
+                personIds.AddRange( people );
             }
 
             foreach ( Group grp in group.Groups )
             {
-                personIds.AddRange( GetAttendanceForGroup( grp ) );
+                GetAttendanceForGroup( grp, personIds );
             }
 
-            return personIds.Distinct();
-        }
-
-        /// <summary>
-        /// Get the minimum need for the specified group and descendents.
-        /// </summary>
-        /// <param name="group">The group whose minimum need we are interested in.</param>
-        /// <returns>The number of people needed for this group.</returns>
-        static public int GetMinimumNeedForGroup( Group group )
-        {
-            int count = 0;
-
-            if ( group.GroupLocations.SelectMany( gl => gl.Schedules ).Where( s => s.IsCheckInActive ).Any() )
-            {
-                if ( group.Attributes == null )
-                {
-                    group.LoadAttributes();
-                }
-                if ( group.GetAttributeValues( "Need" ).Count == 2 )
-                {
-                    count += group.GetAttributeValues( "Need" )[0].AsInteger();
-                }
-            }
-
-            foreach ( Group grp in group.Groups )
-            {
-                count += GetMinimumNeedForGroup( grp );
-            }
-
-            return count;
-        }
-
-        /// <summary>
-        /// Get the maximum need for the specified group and descendents.
-        /// </summary>
-        /// <param name="group">The group whose maximum need we are interested in.</param>
-        /// <returns>The number of people that can serve for this group.</returns>
-        static public int GetMaximumNeedForGroup( Group group )
-        {
-            int count = 0;
-
-            if ( group.GroupLocations.SelectMany( gl => gl.Schedules ).Where( s => s.IsCheckInActive ).Any() )
-            {
-                if ( group.Attributes == null )
-                {
-                    group.LoadAttributes();
-                }
-                if ( group.GetAttributeValues( "Need" ).Count == 2 )
-                {
-                    count += group.GetAttributeValues( "Need" )[1].AsInteger();
-                }
-            }
-
-            foreach ( Group grp in group.Groups )
-            {
-                count += GetMaximumNeedForGroup( grp );
-            }
-
-            return count;
+            return personIds;
         }
 
         /// <summary>
@@ -137,9 +66,12 @@ namespace com.shepherdchurch.CheckinMap
         /// <param name="group">The parent group to start calculating need from.</param>
         /// <param name="remainingNeed">If true only the remaining minimum need is returned.</param>
         /// <returns>An integer that identifies the number of spots that need to be filled.</returns>
-        static public int GetNeedForGroup( Group group, bool remainingNeed = true )
+        static public int GetNeedForGroup( Group group, out int minimumNeed, out int maximumNeed, Rock.Data.RockContext rockContext )
         {
             int count = 0;
+
+            minimumNeed = 0;
+            maximumNeed = 0;
 
             if ( group.Groups.Count > 0 )
             {
@@ -148,33 +80,39 @@ namespace com.shepherdchurch.CheckinMap
                 //
                 foreach ( Group grp in group.Groups )
                 {
-                    count += GetNeedForGroup( grp );
+                    int minNeed, maxNeed;
+                    count += GetNeedForGroup( grp, out minNeed, out maxNeed, rockContext );
+                    minimumNeed += minNeed;
+                    maximumNeed += maxNeed;
                 }
             }
-            else if ( group.GroupLocations.SelectMany( gl => gl.Schedules ).Where( s => s.IsCheckInActive ).Any() )
+            else if ( group.GroupLocations.SelectMany( gl => gl.Schedules ).Where( s => s.IsCheckInActive ).Any() ) // FIXME: This is adding 0.4 seconds to page load
             {
-                //
-                // This is a "need" group and check-in is active, load the attributes if needed and then calculate the need.
-                //
-                if ( group.Attributes == null )
+                if ( true )
                 {
-                    group.LoadAttributes();
-                }
+                    //
+                    // This is a "need" group and check-in is active, load the attributes if needed and then calculate the need.
+                    //
+                    if ( group.Attributes == null )
+                    {
+                        group.LoadAttributes( rockContext );
+                    }
 
-                int need = 0;
-                if ( group.GetAttributeValues( "Need" ).Count == 2 )
-                {
-                    need = group.GetAttributeValues( "Need" )[0].AsInteger();
-                }
+                    int need = 0;
+                    if ( group.GetAttributeValues( "Need" ).Count == 2 )
+                    {
+                        var vals = group.GetAttributeValues( "Need" );
+                        need = vals[0].AsInteger();
+                        minimumNeed += need;
+                        maximumNeed += vals[1].AsInteger();
+                    }
 
-                if ( remainingNeed )
-                {
                     need -= GetAttendanceCountForGroup( group );
-                }
 
-                if ( need > 0 )
-                {
-                    count += need;
+                    if ( need > 0 )
+                    {
+                        count += need;
+                    }
                 }
             }
 
@@ -188,15 +126,22 @@ namespace com.shepherdchurch.CheckinMap
         /// <param name="contentTemplate">The Lava content to use.</param>
         /// <param name="urlMethod">The method to call to generate the URL for each child group. The boolean parameter passed is true if the child group is a serving position and false if it is another sub-area.</param>
         /// <returns>A new ImageMapItem instance that represents how the Group should be displayed on the Image Map.</returns>
-        static public ImageMapItem GetImageMapItemForGroup( RockPage rockPage, Group group, string contentTemplate, Func<Group, bool, string> urlMethod )
+        static public ImageMapItem GetImageMapItemForGroup( RockPage rockPage, Group group, string contentTemplate, Func<Group, bool, string> urlMethod, Rock.Data.RockContext rockContext = null )
         {
             Template template;
             LavaItem servingItem = new LavaItem();
             ImageMapItem item = new ImageMapItem();
+            int minNeed;
+            int maxNeed;
+
+            if ( rockContext == null )
+            {
+                rockContext = new Rock.Data.RockContext();
+            }
 
             if ( group.Attributes == null )
             {
-                group.LoadAttributes();
+                group.LoadAttributes( rockContext );
             }
 
             //
@@ -204,11 +149,12 @@ namespace com.shepherdchurch.CheckinMap
             // checks in this method.
             //
             servingItem.Group = group;
-            servingItem.Need = GetNeedForGroup( group );
-            servingItem.Have = GetAttendanceCountForGroup( group );
-            servingItem.Minimum = GetMinimumNeedForGroup( group );
-            servingItem.Maximum = GetMaximumNeedForGroup( group );
-            servingItem.DistinctPersonIds = GetAttendanceForGroup( group );
+            servingItem.Need = GetNeedForGroup( group, out minNeed, out maxNeed, rockContext );
+            servingItem.Minimum = minNeed;
+            servingItem.Maximum = maxNeed;
+            var people = GetAttendanceForGroup( group );
+            servingItem.Have = people.Count();
+            servingItem.DistinctPersonIds = people.Distinct();
             servingItem.Active = ( servingItem.Minimum > 0 );
 
             if ( group.Groups.Count > 0 )
@@ -244,7 +190,8 @@ namespace com.shepherdchurch.CheckinMap
             // Setup the lava template to run with the variables we pass in.
             //
             template = Template.Parse( contentTemplate );
-            foreach ( var field in LavaHelper.GetCommonMergeFields( rockPage ) )
+            var commonMergeFields = LavaHelper.GetCommonMergeFields( rockPage, null, new CommonMergeFieldsOptions { GetLegacyGlobalMergeFields = false } );
+            foreach ( var field in commonMergeFields )
             {
                 template.InstanceAssigns.Add( field.Key, field.Value );
             }

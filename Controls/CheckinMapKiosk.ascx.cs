@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using System.Text;
@@ -105,17 +106,24 @@ The following variables are defined:<br />
         /// <param name="e">Arguments that describe this event.</param>
         protected void Page_Load( object sender, EventArgs e )
         {
-            if ( !string.IsNullOrWhiteSpace( Request.QueryString["groupId"] ) && !string.IsNullOrWhiteSpace( Request.QueryString["json"] ) )
+            if ( !string.IsNullOrWhiteSpace( PageParameter( "groupId" ) ) && !string.IsNullOrWhiteSpace( Request.QueryString["json"] ) )
             {
-                Group group = new GroupService( new RockContext() ).Get( Request.QueryString["groupId"].AsInteger() );
                 List<ImageMapItem> items = new List<ImageMapItem>();
+                int groupId = PageParameter( "groupId" ).AsInteger();
+                string contentTemplate = GetAttributeValue( "ContentTemplate" );
 
-                foreach ( var grp in group.Groups )
+                using ( RockContext rockContext = new RockContext() )
                 {
-                    //
-                    // Setup the default information for the Map Item.
-                    //
-                    items.Add( CheckinMapHelper.GetImageMapItemForGroup( RockPage, grp, GetAttributeValue( "ContentTemplate" ), GetUrlForGroup ) );
+                    var groups = new GroupService( rockContext )
+                        .Queryable( "GroupLocations,GroupLocations.Schedules,Groups,Groups.GroupLocations,Groups.GroupLocations.Schedules" )
+                        .Where( g => g.ParentGroupId == groupId );
+                    foreach ( var grp in groups )
+                    {
+                        //
+                        // Setup the default information for the Map Item.
+                        //
+                        items.Add( CheckinMapHelper.GetImageMapItemForGroup( RockPage, grp, contentTemplate, GetUrlForGroup, rockContext ) );
+                    }
                 }
 
                 Response.Clear();
@@ -190,16 +198,24 @@ The following variables are defined:<br />
                 group.LoadAttributes();
                 if ( !string.IsNullOrWhiteSpace( group.GetAttributeValue( "Background" ) ) )
                 {
+                    string contentTemplate = GetAttributeValue( "ContentTemplate" );
+
                     imgImageMap.Src = string.Format( "{0}?guid={1}", System.Web.VirtualPathUtility.ToAbsolute( "~/GetImage.ashx" ), group.GetAttributeValue( "Background" ) );
                     imgImageMap.Visible = true;
 
                     List<ImageMapItem> items = new List<ImageMapItem>();
-                    foreach ( var grp in group.Groups )
+                    using ( RockContext rockContext = new RockContext() )
                     {
-                        //
-                        // Setup the default information for the Map Item.
-                        //
-                        items.Add( CheckinMapHelper.GetImageMapItemForGroup( RockPage, grp, GetAttributeValue( "ContentTemplate" ), GetUrlForGroup ) );
+                        var groups = new GroupService( rockContext )
+                            .Queryable( "GroupLocations,GroupLocations.Schedules,Groups,Groups.GroupLocations,Groups.GroupLocations.Schedules" )
+                            .Where( g => g.ParentGroupId == group.Id );
+                        foreach ( var grp in groups )
+                        {
+                            //
+                            // Setup the default information for the Map Item.
+                            //
+                            items.Add( CheckinMapHelper.GetImageMapItemForGroup( RockPage, grp, contentTemplate, GetUrlForGroup, rockContext ) );
+                        }
                     }
 
                     hfMapData.Value = Convert.ToBase64String( Encoding.UTF8.GetBytes( JsonConvert.SerializeObject( items ) ) );
