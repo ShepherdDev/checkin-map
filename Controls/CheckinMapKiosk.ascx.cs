@@ -115,7 +115,7 @@ The following variables are defined:<br />
                 using ( RockContext rockContext = new RockContext() )
                 {
                     var groups = new GroupService( rockContext )
-                        .Queryable( "GroupLocations,GroupLocations.Schedules,Groups,Groups.GroupLocations,Groups.GroupLocations.Schedules" )
+                        .Queryable( "GroupLocations,GroupLocations.Schedules,Groups,Groups.Groups,Groups.GroupLocations,Groups.GroupLocations.Schedules" )
                         .Where( g => g.ParentGroupId == groupId );
                     foreach ( var grp in groups )
                     {
@@ -207,7 +207,7 @@ The following variables are defined:<br />
                     using ( RockContext rockContext = new RockContext() )
                     {
                         var groups = new GroupService( rockContext )
-                            .Queryable( "GroupLocations,GroupLocations.Schedules,Groups,Groups.GroupLocations,Groups.GroupLocations.Schedules" )
+                            .Queryable( "GroupLocations,GroupLocations.Schedules,Groups,Groups.Groups,Groups.GroupLocations,Groups.GroupLocations.Schedules" )
                             .Where( g => g.ParentGroupId == group.Id );
                         foreach ( var grp in groups )
                         {

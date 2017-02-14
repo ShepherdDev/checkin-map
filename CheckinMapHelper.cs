@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 
 using DotLiquid;
 using Rock;
+using Rock.Data;
 using Rock.Lava;
 using Rock.Model;
 using Rock.Web.UI;
@@ -88,35 +90,87 @@ namespace com.shepherdchurch.CheckinMap
             }
             else if ( group.GroupLocations.SelectMany( gl => gl.Schedules ).Where( s => s.IsCheckInActive ).Any() ) // FIXME: This is adding 0.4 seconds to page load
             {
-                if ( true )
-                {
-                    //
-                    // This is a "need" group and check-in is active, load the attributes if needed and then calculate the need.
-                    //
-                    if ( group.Attributes == null )
-                    {
-                        group.LoadAttributes( rockContext );
-                    }
+                //
+                // This is a "need" group and check-in is active, load the attributes if needed and then calculate the need.
+                //
+                var val = GetAttributeValue( rockContext, group, "Need" );
+                int need = 0;
 
-                    int need = 0;
-                    if ( group.GetAttributeValues( "Need" ).Count == 2 )
+                if ( !string.IsNullOrWhiteSpace( val ) )
+                {
+                    var vals = val.Split( ',' );
+
+                    if ( vals.Length == 2 )
                     {
-                        var vals = group.GetAttributeValues( "Need" );
                         need = vals[0].AsInteger();
                         minimumNeed += need;
                         maximumNeed += vals[1].AsInteger();
                     }
+                }
 
-                    need -= GetAttendanceCountForGroup( group );
+                need -= GetAttendanceCountForGroup( group );
 
-                    if ( need > 0 )
-                    {
-                        count += need;
-                    }
+                if ( need > 0 )
+                {
+                    count += need;
                 }
             }
 
             return count;
+        }
+
+        private static int GetAttributeIdForGroup( RockContext rockContext, Group group, string attributeKey )
+        {
+            Rock.Web.Cache.RockMemoryCache cache = Rock.Web.Cache.RockMemoryCache.Default;
+            string cacheKey = string.Format( "com.shepherdchurch.checkinmap.attribute_{0}_{1}", attributeKey, group.GroupTypeId );
+            var val = cache.Get( cacheKey );
+
+            if ( val == null )
+            {
+                if ( group.Attributes == null )
+                {
+                    group.LoadAttributes( rockContext );
+                }
+
+                var attribute = group
+                    .Attributes
+                    .Where( a => a.Key == attributeKey )
+                    .Select( a => a.Value )
+                    .FirstOrDefault();
+
+                if ( attribute != null )
+                {
+                    val = attribute.Id;
+                    cache.Add( cacheKey, val, DateTime.Now.AddMinutes( 10 ) );
+
+                    return attribute.Id;
+                }
+
+                return 0;
+            }
+
+            return ( int ) val;
+        }
+
+        private static string GetAttributeValue( RockContext rockContext, Group group, string attributeKey )
+        {
+            int attributeId = GetAttributeIdForGroup( rockContext, group, attributeKey );
+
+            var val = new AttributeValueService( rockContext )
+                .Queryable()
+                .AsNoTracking()
+                .Where( av => av.AttributeId == attributeId && av.EntityId == group.Id )
+                .Select( av => av.Value )
+                .FirstOrDefault();
+
+            if ( val == null )
+            {
+                var attribute = Rock.Web.Cache.AttributeCache.Read( attributeId );
+
+                return attribute != null ? attribute.DefaultValue : string.Empty;
+            }
+
+            return val;
         }
 
         /// <summary>
@@ -136,7 +190,7 @@ namespace com.shepherdchurch.CheckinMap
 
             if ( rockContext == null )
             {
-                rockContext = new Rock.Data.RockContext();
+                rockContext = new RockContext();
             }
 
             if ( group.Attributes == null )
@@ -216,6 +270,34 @@ namespace com.shepherdchurch.CheckinMap
             item.Identifier = group.Guid.ToString();
 
             return item;
+        }
+
+        public static long RunTest( RockContext rockContext, RockPage rockPage, int groupId )
+        {
+            string template = @"Spots: {{ Item.Minimum }}{% if Item.Minimum != Item.Maximum %} - {{ Item.Maximum }}{% endif %}<br />Have: {{ Item.Have }}<br />Need: {{ Item.Need }}
+{%- if Item.Active == 'false' -%}
+ {%- assign CssClass = 'disabled' -%}
+{%- elseif Item.Need > 0 -%}
+ {%- assign CssClass = 'imagemap-danger' -%}
+{%- elseif Item.Have < Item.Maximum -%}
+ {%- assign CssClass = 'imagemap-warning' -%}
+{%- else -%}
+ {%- assign CssClass = 'imagemap-success' -%}
+{%- endif -%}";
+            System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+
+            sw.Start();
+            var groups = new GroupService( rockContext )
+                .Queryable( "GroupLocations,GroupLocations.Schedules,Groups,Groups.Groups,Groups.GroupLocations,Groups.GroupLocations.Schedules" )
+                .AsNoTracking()
+                .Where( g => g.ParentGroupId == groupId );
+            foreach ( var grp in groups )
+            {
+                CheckinMapHelper.GetImageMapItemForGroup( rockPage, grp, template, null, rockContext );
+            }
+            sw.Stop();
+
+            return sw.ElapsedMilliseconds;
         }
     }
 }
