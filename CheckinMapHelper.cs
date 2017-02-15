@@ -122,7 +122,7 @@ namespace com.shepherdchurch.CheckinMap
         private static int GetAttributeIdForGroup( RockContext rockContext, Group group, string attributeKey )
         {
             Rock.Web.Cache.RockMemoryCache cache = Rock.Web.Cache.RockMemoryCache.Default;
-            string cacheKey = string.Format( "com.shepherdchurch.checkinmap.attribute_{0}_{1}", attributeKey, group.GroupTypeId );
+            string cacheKey = string.Format( "com.shepherdchurch.checkinmap.attribute_{0}_{1}", attributeKey, group.Id );
             var val = cache.Get( cacheKey );
 
             if ( val == null )
