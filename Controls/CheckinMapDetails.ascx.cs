@@ -228,14 +228,7 @@ namespace RockWeb.Plugins.com_shepherdchurch.CheckinMap
                 btnSave.Visible = UserCanEdit;
                 imgImageMap.Src = string.Format( "{0}?guid={1}", VirtualPathUtility.ToAbsolute( "~/GetImage.ashx" ), group.GetAttributeValue( "Background" ) );
 
-                List<ImageMapItem> items = new List<ImageMapItem>();
-                foreach ( var grp in group.Groups )
-                {
-                    //
-                    // Setup the default information for the Map Item.
-                    //
-                    items.Add( CheckinMapHelper.GetImageMapItemForGroup( RockPage, grp, contentTemplate, null ) );
-                }
+                IEnumerable<ImageMapItem> items = CheckinMapHelper.GetImapeMapItemsForParentGroupId( group.Id, RockPage, contentTemplate, null );
 
                 hfMapData.Value = Convert.ToBase64String( Encoding.UTF8.GetBytes( JsonConvert.SerializeObject( items ) ) );
                 nbDetailMessage.Visible = false;

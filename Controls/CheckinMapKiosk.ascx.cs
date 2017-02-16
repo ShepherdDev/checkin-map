@@ -108,23 +108,10 @@ The following variables are defined:<br />
         {
             if ( !string.IsNullOrWhiteSpace( PageParameter( "groupId" ) ) && !string.IsNullOrWhiteSpace( Request.QueryString["json"] ) )
             {
-                List<ImageMapItem> items = new List<ImageMapItem>();
                 int groupId = PageParameter( "groupId" ).AsInteger();
                 string contentTemplate = GetAttributeValue( "ContentTemplate" );
 
-                using ( RockContext rockContext = new RockContext() )
-                {
-                    var groups = new GroupService( rockContext )
-                        .Queryable( "GroupLocations,GroupLocations.Schedules,Groups,Groups.Groups,Groups.GroupLocations,Groups.GroupLocations.Schedules" )
-                        .Where( g => g.ParentGroupId == groupId );
-                    foreach ( var grp in groups )
-                    {
-                        //
-                        // Setup the default information for the Map Item.
-                        //
-                        items.Add( CheckinMapHelper.GetImageMapItemForGroup( RockPage, grp, contentTemplate, GetUrlForGroup, rockContext ) );
-                    }
-                }
+                IEnumerable<ImageMapItem> items = CheckinMapHelper.GetImapeMapItemsForParentGroupId( groupId, RockPage, contentTemplate, GetUrlForGroup );
 
                 Response.Clear();
                 Response.ContentType = "application/json";
@@ -203,20 +190,7 @@ The following variables are defined:<br />
                     imgImageMap.Src = string.Format( "{0}?guid={1}", System.Web.VirtualPathUtility.ToAbsolute( "~/GetImage.ashx" ), group.GetAttributeValue( "Background" ) );
                     imgImageMap.Visible = true;
 
-                    List<ImageMapItem> items = new List<ImageMapItem>();
-                    using ( RockContext rockContext = new RockContext() )
-                    {
-                        var groups = new GroupService( rockContext )
-                            .Queryable( "GroupLocations,GroupLocations.Schedules,Groups,Groups.Groups,Groups.GroupLocations,Groups.GroupLocations.Schedules" )
-                            .Where( g => g.ParentGroupId == group.Id );
-                        foreach ( var grp in groups )
-                        {
-                            //
-                            // Setup the default information for the Map Item.
-                            //
-                            items.Add( CheckinMapHelper.GetImageMapItemForGroup( RockPage, grp, contentTemplate, GetUrlForGroup, rockContext ) );
-                        }
-                    }
+                    IEnumerable<ImageMapItem> items = CheckinMapHelper.GetImapeMapItemsForParentGroupId( group.Id, RockPage, contentTemplate, GetUrlForGroup );
 
                     hfMapData.Value = Convert.ToBase64String( Encoding.UTF8.GetBytes( JsonConvert.SerializeObject( items ) ) );
                 }
