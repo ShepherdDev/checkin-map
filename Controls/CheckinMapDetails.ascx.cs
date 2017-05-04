@@ -144,6 +144,7 @@ namespace RockWeb.Plugins.com_shepherdchurch.CheckinMap
                 li.Controls.Add( section );
                 div.Controls.Add( ul );
 
+                section.InnerText = string.Format( "{0} <span class=\"label label-info\"#{1}</span>", groupType.Name, groupType.Id );
                 section.InnerText = groupType.Name;
                 section.Attributes.Add( "class", "checkin-item checkin-area" );
 
@@ -187,7 +188,7 @@ namespace RockWeb.Plugins.com_shepherdchurch.CheckinMap
                 li.Controls.Add( section );
                 div.Controls.Add( ul );
 
-                section.InnerText = string.Format( "{0} ({1})", group.Name, group.Id );
+                section.InnerText = string.Format( "{0} <span class=\"label label-info\"#{1}</span>", group.Name, group.Id );
                 section.Attributes.Add( "class", "checkin-item" );
                 section.AddCssClass( "checkin-group " );
                 li.Attributes.Add( "data-key", group.Guid.ToString() );
