@@ -21,6 +21,7 @@ namespace com.shepherdchurch.CheckinMap
         private List<Group> Groups = null;
         private List<GroupLocation> GroupLocations = null;
         private List<GroupLocationScheduleId> GroupLocationSchedules = null;
+        private List<Attendance> ActiveAttendance = null;
         private Dictionary<int, string> GroupNeedValues = null;
         private Dictionary<int, string> GroupPositionXValues = null;
         private Dictionary<int, string> GroupPositionYValues = null;
@@ -68,7 +69,7 @@ namespace com.shepherdchurch.CheckinMap
             // Get all the possible GroupLocations that will be processed.
             //
             GroupLocations = new GroupLocationService( RockContext )
-                .Queryable()
+                .Queryable( "Schedules" )
                 .Where( gl => groupIds.Contains( gl.GroupId ) ).ToList();
 
             //
@@ -93,6 +94,26 @@ namespace com.shepherdchurch.CheckinMap
             ScheduleIdsActive = schedules
                 .Where( s => s.IsCheckInActive )
                 .Select( s => s.Id )
+                .ToList();
+
+            //
+            // Populate the list of people that are currently in attendance.
+            //
+            var today = RockDateTime.Now.Date;
+            ActiveAttendance = new AttendanceService( this.RockContext )
+                .Queryable( "PersonAlias" )
+                .Where( a =>
+                    a.ScheduleId.HasValue &&
+                    a.GroupId.HasValue &&
+                    a.LocationId.HasValue &&
+                    a.PersonAlias != null &&
+                    a.DidAttend.HasValue &&
+                    a.DidAttend.Value &&
+                    a.StartDateTime > today &&
+                    !a.EndDateTime.HasValue &&
+                    ScheduleIdsActive.Contains( a.ScheduleId.Value ) &&
+                    groupIds.Contains( a.GroupId.Value ) )
+                .DistinctBy( a => a.PersonAlias.PersonId )
                 .ToList();
 
             //
@@ -159,25 +180,26 @@ namespace com.shepherdchurch.CheckinMap
         /// <returns>The number of people currently checked-in to the group.</returns>
         protected IEnumerable<int> GetAttendanceForGroupId( int groupId, List<int> personIds = null )
         {
-            var locationIds = GroupLocations.Where( gl => gl.GroupId == groupId ).Select( gl => gl.LocationId );
+            var locationIds = GroupLocations
+                .Where( gl => gl.GroupId == groupId )
+                .Select( gl => gl.LocationId );
+            var activeScheduleIds = GroupLocations
+                .Where( gl => gl.GroupId == groupId )
+                .SelectMany( gl => gl.Schedules )
+                .Where( s => s.IsScheduleOrCheckInActive )
+                .Select( s => s.Id )
+                .ToList();
 
             if ( personIds == null )
             {
                 personIds = new List<int>();
             }
 
-            foreach ( var locationId in locationIds )
-            {
-                var summary = Rock.CheckIn.KioskLocationAttendance.Read( locationId );
-
-                var people = summary
-                    .Groups
-                    .Where( g => g.GroupId == groupId )
-                    .SelectMany( g => g.Schedules )
-                    .SelectMany( s => s.PersonIds );
-
-                personIds.AddRange( people );
-            }
+            var currentAttendeeIds = ActiveAttendance.Where( a =>
+                    activeScheduleIds.Contains( a.ScheduleId.Value ) &&
+                    a.GroupId.Value == groupId )
+                .Select( a => a.PersonAlias.PersonId );
+            personIds.AddRange( currentAttendeeIds );
 
             foreach ( var grp in Groups.Where( g => g.ParentGroupId == groupId ) )
             {
