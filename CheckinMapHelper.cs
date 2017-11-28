@@ -113,7 +113,6 @@ namespace com.shepherdchurch.CheckinMap
                     !a.EndDateTime.HasValue &&
                     ScheduleIdsActive.Contains( a.ScheduleId.Value ) &&
                     groupIds.Contains( a.GroupId.Value ) )
-                .DistinctBy( a => a.PersonAlias.PersonId )
                 .ToList();
 
             //
