@@ -182,6 +182,8 @@ The following variables are defined:<br />
             imgImageMap.Visible = false;
             lbBack.AddCssClass( "invisible" );
 
+            var scheduleId = hfScheduleID.Value.AsIntegerOrNull();
+
             if ( group != null )
             {
                 group.LoadAttributes();
@@ -192,7 +194,7 @@ The following variables are defined:<br />
                     imgImageMap.Src = string.Format( "{0}?guid={1}", System.Web.VirtualPathUtility.ToAbsolute( "~/GetImage.ashx" ), group.GetAttributeValue( "Background" ) );
                     imgImageMap.Visible = true;
 
-                    IEnumerable<ImageMapItem> items = CheckinMapHelper.GetImapeMapItemsForParentGroupId( group.Id, RockPage, contentTemplate, GetUrlForGroup );
+                    IEnumerable<ImageMapItem> items = CheckinMapHelper.GetImapeMapItemsForParentGroupId( group.Id, scheduleId, RockPage, contentTemplate, GetUrlForGroup );
 
                     hfMapData.Value = Convert.ToBase64String( Encoding.UTF8.GetBytes( JsonConvert.SerializeObject( items ) ) );
                 }

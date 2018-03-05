@@ -89,7 +89,16 @@ namespace com.shepherdchurch.CheckinMap
 
             if ( scheduleId.HasValue )
             {
-                ScheduleIdsActive = new List<int> { scheduleId.Value };
+                var schedule = new ScheduleService( RockContext ).Get( scheduleId.Value );
+
+                if ( schedule != null && schedule.IsCheckInActive )
+                {
+                    ScheduleIdsActive = new List<int> { scheduleId.Value };
+                }
+                else
+                {
+                    ScheduleIdsActive = new List<int>();
+                }
             }
             else
             {
