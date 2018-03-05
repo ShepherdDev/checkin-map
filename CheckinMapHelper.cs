@@ -46,18 +46,33 @@ namespace com.shepherdchurch.CheckinMap
         /// <returns>An enumerable collection of ImageMapItems that represent the buttons to be displayed.</returns>
         static public IEnumerable<ImageMapItem> GetImapeMapItemsForParentGroupId( int groupId, RockPage rockPage, string contentTemplate, Func<Group, bool, string> urlMethod )
         {
-            return new CheckinMapHelper( new RockContext() ).GetImageMapItemsForParentGroupId( groupId, rockPage, contentTemplate, urlMethod );
+            return new CheckinMapHelper( new RockContext() ).GetImageMapItemsForParentGroupId( groupId, null, rockPage, contentTemplate, urlMethod );
         }
 
         /// <summary>
         /// Get all the ImageMapItem's that need to be displayed under the parent groupId.
         /// </summary>
         /// <param name="groupId">The ID of the parent group to have buttons displayed.</param>
+        /// <param name="scheduleId">The ID of the schedule to operate in.</param>
         /// <param name="rockPage">The RockPage object to pull information into Lava from.</param>
         /// <param name="contentTemplate">The Lava content template to use when generating the button data.</param>
         /// <param name="urlMethod">The method to call to generate a URL link for each item.</param>
         /// <returns>An enumerable collection of ImageMapItems that represent the buttons to be displayed.</returns>
-        protected IEnumerable<ImageMapItem> GetImageMapItemsForParentGroupId( int groupId, RockPage rockPage, string contentTemplate, Func<Group, bool, string> urlMethod )
+        static public IEnumerable<ImageMapItem> GetImapeMapItemsForParentGroupId( int groupId, int? scheduleId, RockPage rockPage, string contentTemplate, Func<Group, bool, string> urlMethod )
+        {
+            return new CheckinMapHelper( new RockContext() ).GetImageMapItemsForParentGroupId( groupId, scheduleId, rockPage, contentTemplate, urlMethod );
+        }
+
+        /// <summary>
+        /// Get all the ImageMapItem's that need to be displayed under the parent groupId.
+        /// </summary>
+        /// <param name="groupId">The ID of the parent group to have buttons displayed.</param>
+        /// <param name="scheduleId">The ID of the schedule to operate in.</param>
+        /// <param name="rockPage">The RockPage object to pull information into Lava from.</param>
+        /// <param name="contentTemplate">The Lava content template to use when generating the button data.</param>
+        /// <param name="urlMethod">The method to call to generate a URL link for each item.</param>
+        /// <returns>An enumerable collection of ImageMapItems that represent the buttons to be displayed.</returns>
+        protected IEnumerable<ImageMapItem> GetImageMapItemsForParentGroupId( int groupId, int? scheduleId, RockPage rockPage, string contentTemplate, Func<Group, bool, string> urlMethod )
         {
             //
             // Get all the possible groups we will work with in our processing.
@@ -72,29 +87,36 @@ namespace com.shepherdchurch.CheckinMap
                 .Queryable( "Schedules" )
                 .Where( gl => groupIds.Contains( gl.GroupId ) ).ToList();
 
-            //
-            // Load all the schedules we will work with. These are all schedules that are linked to any
-            // group location used by any group we work with. Often this will result in a single schedule.
-            //
-            var schedules = new ScheduleService( RockContext )
-                .ExecuteQuery( string.Format(
-                    @"
+            if ( scheduleId.HasValue )
+            {
+                ScheduleIdsActive = new List<int> { scheduleId.Value };
+            }
+            else
+            {
+                //
+                // Load all the schedules we will work with. These are all schedules that are linked to any
+                // group location used by any group we work with. Often this will result in a single schedule.
+                //
+                var schedules = new ScheduleService( RockContext )
+                    .ExecuteQuery( string.Format(
+                        @"
                         SELECT DISTINCT [Schedule].*
                         FROM [Schedule]
                         LEFT JOIN [GroupLocationSchedule] ON [GroupLocationSchedule].[ScheduleId] = [Schedule].[Id]
                         WHERE [GroupLocationSchedule].GroupLocationId IN ({0})",
-                            string.Join( ",", GroupLocations.Select( gl => gl.Id ) ) ) )
-                    .ToList();
+                                string.Join( ",", GroupLocations.Select( gl => gl.Id ) ) ) )
+                        .ToList();
 
-            //
-            // The IsCheckInActive method does some decent processing. Since we are likely to only have
-            // a couple schedules over many groups, we pre-process the IsCheckInActive command for
-            // each schedule and then we can use the list to see if the schedule Id is active later.
-            //
-            ScheduleIdsActive = schedules
-                .Where( s => s.IsCheckInActive )
-                .Select( s => s.Id )
-                .ToList();
+                //
+                // The IsCheckInActive method does some decent processing. Since we are likely to only have
+                // a couple schedules over many groups, we pre-process the IsCheckInActive command for
+                // each schedule and then we can use the list to see if the schedule Id is active later.
+                //
+                ScheduleIdsActive = schedules
+                    .Where( s => s.IsCheckInActive )
+                    .Select( s => s.Id )
+                    .ToList();
+            }
 
             //
             // Populate the list of people that are currently in attendance.

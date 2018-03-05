@@ -39,6 +39,7 @@
 
         <asp:Panel ID="pnlBody" runat="server" CssClass="js-kioskscrollpanel">
             <asp:HiddenField ID="hfGroupId" runat="server" />
+            <asp:HiddenField ID="hfScheduleID" runat="server" />
 
             <header class="container">
                 <h1 id="hHeader" runat="server"></h1>
@@ -76,7 +77,7 @@
                         var location = window.location.href.substr(0, window.location.href.indexOf('?'));
 
                         updateTimer = null;
-                        updateAjax = $.getJSON(location + '?groupId=' + $('#<%= hfGroupId.ClientID %>').val() + '&json=1', function (data, status, xhr)
+                        updateAjax = $.getJSON(location + '?groupId=' + $('#<%= hfGroupId.ClientID %>').val() + '&scheduleId=' + $('#<%= hfScheduleID.ClientID %>').val() + '&json=1', function (data, status, xhr)
                         {
                             $('#<%= imgImageMap.ClientID %>').ImageMap('setActions', data);
 

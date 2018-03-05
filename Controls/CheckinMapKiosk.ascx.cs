@@ -109,9 +109,10 @@ The following variables are defined:<br />
             if ( !string.IsNullOrWhiteSpace( PageParameter( "groupId" ) ) && !string.IsNullOrWhiteSpace( Request.QueryString["json"] ) )
             {
                 int groupId = PageParameter( "groupId" ).AsInteger();
+                int? scheduleId = PageParameter( "scheduleId" ).AsIntegerOrNull();
                 string contentTemplate = GetAttributeValue( "ContentTemplate" );
 
-                IEnumerable<ImageMapItem> items = CheckinMapHelper.GetImapeMapItemsForParentGroupId( groupId, RockPage, contentTemplate, GetUrlForGroup );
+                IEnumerable<ImageMapItem> items = CheckinMapHelper.GetImapeMapItemsForParentGroupId( groupId, scheduleId, RockPage, contentTemplate, GetUrlForGroup );
 
                 Response.Clear();
                 Response.ContentType = "application/json";
@@ -137,6 +138,7 @@ The following variables are defined:<br />
             {
                 hfMapData.Value = Convert.ToBase64String( Encoding.UTF8.GetBytes( "[]" ) );
                 hfGroupId.Value = _defaultGroupId.ToString();
+                hfScheduleID.Value = PageParameter( "scheduleId" );
             }
 
             _group = new GroupService( new RockContext() ).Get( hfGroupId.Value.AsInteger() );
@@ -218,6 +220,11 @@ The following variables are defined:<br />
                     PageReference pageRef = new PageReference( GetAttributeValue( "ServePage" ) );
 
                     pageRef.Parameters = new Dictionary<string, string> { { "groupId", group.Id.ToString() } };
+                    if ( PageParameter( "scheduleId" ).AsIntegerOrNull() != null )
+                    {
+                        pageRef.Parameters.Add( "scheduleId", PageParameter( "scheduleId" ) );
+                    }
+
                     return pageRef.BuildUrl();
                 }
                 else

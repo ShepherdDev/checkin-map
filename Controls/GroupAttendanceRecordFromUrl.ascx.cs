@@ -48,6 +48,7 @@ namespace RockWeb.Plugins.com_shepherdchurch.ServingMap
                 bool didAttend = true;
                 int groupId = PageParameter( "groupId" ).AsInteger();
                 int personId = PageParameter( "personId" ).AsInteger();
+                int? scheduleId = PageParameter( "scheduleId" ).AsIntegerOrNull();
 
                 if ( string.IsNullOrEmpty( GetAttributeValue( "RedirectPage" ) ) && string.IsNullOrEmpty( GetAttributeValue( "Message" ) ) )
                 {
@@ -79,7 +80,7 @@ namespace RockWeb.Plugins.com_shepherdchurch.ServingMap
                     didAttend = PageParameter( "attended" ) == "1";
                 }
 
-                RecordAttendance( groupId, personId, didAttend );
+                RecordAttendance( groupId, scheduleId, personId, didAttend );
             }
         }
 
@@ -91,9 +92,10 @@ namespace RockWeb.Plugins.com_shepherdchurch.ServingMap
         /// Mark the person as attended for the given group.
         /// </summary>
         /// <param name="groupId">The Id of the group to take attendance for.</param>
+        /// <param name="scheduleId">The Id of the schedule to record attendance in.</param>
         /// <param name="personId">The Id of the person to take attendance for.</param>
         /// <param name="didAttend">True if the person should be marked as attended, false otherwise.</param>
-        void RecordAttendance( int groupId, int personId, bool didAttend )
+        void RecordAttendance( int groupId, int? scheduleId, int personId, bool didAttend )
         {
             RockContext rockContext = new RockContext();
             GroupService groupService = new GroupService( rockContext );
@@ -105,7 +107,6 @@ namespace RockWeb.Plugins.com_shepherdchurch.ServingMap
             Group group;
             Person person;
             int? campusId = null;
-            int? scheduleId = null;
             int? locationId = null;
 
             group = groupService.Get( groupId );
@@ -124,7 +125,7 @@ namespace RockWeb.Plugins.com_shepherdchurch.ServingMap
                 if ( groupLocation != null )
                 {
                     campusId = locationService.Get( groupLocation.Location.Id ).CampusId;
-                    scheduleId = groupLocation.Schedules.Where( s => s.IsCheckInActive ).First().Id;
+                    scheduleId = scheduleId ?? groupLocation.Schedules.Where( s => s.IsCheckInActive ).First().Id;
                     locationId = groupLocation.Location.Id;
                 }
 
