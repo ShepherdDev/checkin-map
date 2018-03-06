@@ -116,7 +116,7 @@ if ( Test-Path $ProjectControlsPath )
 {
 	if ( !(Test-Path $RockWebPluginProjectPath) )
 	{
-		cmd /c mklink /J "$RockWebPluginProjectPath" "$ProjectControlsPath"
+		cmd /c mklink /D "$RockWebPluginProjectPath" "$ProjectControlsPath"
 	}
 }
 
@@ -133,7 +133,7 @@ if ( Test-Path $ProjectThemesPath )
 
 		if ( !(Test-Path $TargetTheme) )
 		{
-			cmd /c mklink /J "$TargetTheme" "$SourceTheme"
+			cmd /c mklink /D "$TargetTheme" "$SourceTheme"
 		}
 	}
 }
@@ -153,7 +153,7 @@ if ( Test-Path $ProjectWebhooksPath )
 
 		if ( !(Test-Path $TargetWebhook) )
 		{
-			cmd /c mklink /H "$TargetWebhook" "$SourceWebhook"
+			cmd /c mklink "$TargetWebhook" "$SourceWebhook"
 		}
 	}
 }
@@ -166,7 +166,7 @@ if ( $HasRockIt -eq 1 )
 	$TargetProjectPath = Join-Path $RockItPath $ProjectFullName
 	if ( !(Test-Path $TargetProjectPath) )
 	{
-		cmd /c mklink /J "$TargetProjectPath" "$ProjectPath"
+		cmd /c mklink /D "$TargetProjectPath" "$ProjectPath"
 	}
 }
 
