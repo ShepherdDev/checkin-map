@@ -131,7 +131,26 @@ namespace com.shepherdchurch.CheckinMap
             // Populate the list of people that are currently in attendance.
             //
             var today = RockDateTime.Now.Date;
-            ActiveAttendance = new AttendanceService( this.RockContext )
+            if ( typeof( Person ).Assembly.GetName().Version >= Version.Parse( "1.8.0" ) )
+            {
+                ActiveAttendance = new AttendanceService( this.RockContext )
+                .Queryable( "PersonAlias" )
+                .Where( a =>
+                    a.Occurrence.ScheduleId.HasValue &&
+                    a.Occurrence.GroupId.HasValue &&
+                    a.Occurrence.LocationId.HasValue &&
+                    a.PersonAlias != null &&
+                    a.DidAttend.HasValue &&
+                    a.DidAttend.Value &&
+                    a.StartDateTime > today &&
+                    !a.EndDateTime.HasValue &&
+                    ScheduleIdsActive.Contains( a.Occurrence.ScheduleId.Value ) &&
+                    groupIds.Contains( a.Occurrence.GroupId.Value ) )
+                .ToList();
+            }
+            else
+            {
+                ActiveAttendance = new AttendanceService( this.RockContext )
                 .Queryable( "PersonAlias" )
                 .Where( a =>
                     a.ScheduleId.HasValue &&
@@ -145,6 +164,7 @@ namespace com.shepherdchurch.CheckinMap
                     ScheduleIdsActive.Contains( a.ScheduleId.Value ) &&
                     groupIds.Contains( a.GroupId.Value ) )
                 .ToList();
+            }
 
             //
             // Build the list of all GroupLocationSchedule records related to our groups.

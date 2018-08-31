@@ -82,7 +82,7 @@
                 $('#<%= btnSave.ClientID %>').click(function (e)
                 {
                     var data = Base64.encode(JSON.stringify($('#<%= imgImageMap.ClientID %>').ImageMap('getActions')));
-                    __doPostBack('<%= upnlContent.ClientID %>', 'save:' + data);
+                    window.location = "javascript:__doPostBack('<%= upnlContent.ClientID %>', 'save:" + data + "')";
                     e.preventDefault();
                 });
 
@@ -93,7 +93,7 @@
                         var $li = $(this).closest('li');
                         if ($(this).hasClass('checkin-group'))
                         {
-                            __doPostBack('<%= upnlContent.ClientID %>', 'select-group:' + $li.attr('data-key'));
+                            window.location = "javascript:__doPostBack('<%= upnlContent.ClientID %>', 'select-group:" + $li.attr('data-key') + "')";
                         }
                     }
                 });
