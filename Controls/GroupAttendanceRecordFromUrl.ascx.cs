@@ -120,12 +120,12 @@ namespace RockWeb.Plugins.com_shepherdchurch.ServingMap
                 // Determine if this is a check-in style attendance or just regular group attendance.
                 //
                 GroupLocation groupLocation = group.GroupLocations
-                    .Where( gl => gl.Schedules.Where( s => s.IsCheckInActive ).Any() )
+                    .Where( gl => gl.Schedules.Where( s => s.WasCheckInActive( RockDateTime.Now ) ).Any() )
                     .FirstOrDefault();
                 if ( groupLocation != null )
                 {
                     campusId = locationService.Get( groupLocation.Location.Id ).CampusId;
-                    scheduleId = scheduleId ?? groupLocation.Schedules.Where( s => s.IsCheckInActive ).First().Id;
+                    scheduleId = scheduleId ?? groupLocation.Schedules.Where( s => s.WasCheckInActive( RockDateTime.Now ) ).First().Id;
                     locationId = groupLocation.Location.Id;
                 }
 
@@ -137,22 +137,24 @@ namespace RockWeb.Plugins.com_shepherdchurch.ServingMap
                 //
                 DateTime beginDate = date.Date;
                 DateTime endDate = beginDate.AddDays( 1 );
-                var attendance = attendanceService.Queryable( "Group,Schedule,PersonAlias.Person" )
+                var attendance = attendanceService.Queryable( "PersonAlias.Person" )
                     .Where( a =>
                         a.StartDateTime >= beginDate &&
                         a.StartDateTime < endDate &&
-                        a.LocationId == locationId &&
-                        a.ScheduleId == scheduleId &&
-                        a.GroupId == groupId &&
                         a.PersonAlias.PersonId == personId )
+                    .ToList()
+                    .Where( a =>
+                        a.Occurrence.LocationId == locationId &&
+                        a.Occurrence.ScheduleId == scheduleId &&
+                        a.Occurrence.GroupId == groupId )
                     .FirstOrDefault();
                 if ( attendance == null )
                 {
                     attendance = rockContext.Attendances.Create();
-                    attendance.LocationId = locationId;
+                    attendance.Occurrence.LocationId = locationId;
                     attendance.CampusId = campusId;
-                    attendance.ScheduleId = scheduleId;
-                    attendance.GroupId = group.Id;
+                    attendance.Occurrence.ScheduleId = scheduleId;
+                    attendance.Occurrence.GroupId = group.Id;
                     attendance.PersonAlias = primaryAlias;
                     attendance.PersonAliasId = primaryAlias.Id;
                     attendanceService.Add( attendance );
@@ -162,9 +164,9 @@ namespace RockWeb.Plugins.com_shepherdchurch.ServingMap
                 attendance.EndDateTime = null;
                 attendance.DidAttend = didAttend;
 
-                if ( attendance.LocationId.HasValue )
+                if ( attendance.Occurrence.LocationId.HasValue )
                 {
-                    Rock.CheckIn.KioskLocationAttendance.Flush( attendance.LocationId.Value );
+                    Rock.CheckIn.KioskLocationAttendance.Remove( attendance.Occurrence.LocationId.Value );
                 }
 
                 rockContext.SaveChanges();

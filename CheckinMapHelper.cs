@@ -91,7 +91,7 @@ namespace com.shepherdchurch.CheckinMap
             {
                 var schedule = new ScheduleService( RockContext ).Get( scheduleId.Value );
 
-                if ( schedule != null && schedule.IsCheckInActive )
+                if ( schedule != null && schedule.WasCheckInActive( RockDateTime.Now ) )
                 {
                     ScheduleIdsActive = new List<int> { scheduleId.Value };
                 }
@@ -122,7 +122,7 @@ namespace com.shepherdchurch.CheckinMap
                 // each schedule and then we can use the list to see if the schedule Id is active later.
                 //
                 ScheduleIdsActive = schedules
-                    .Where( s => s.IsCheckInActive )
+                    .Where( s => s.WasCheckInActive( RockDateTime.Now ) )
                     .Select( s => s.Id )
                     .ToList();
             }
@@ -131,40 +131,22 @@ namespace com.shepherdchurch.CheckinMap
             // Populate the list of people that are currently in attendance.
             //
             var today = RockDateTime.Now.Date;
-            if ( typeof( Person ).Assembly.GetName().Version >= Version.Parse( "1.8.0" ) )
-            {
-                ActiveAttendance = new AttendanceService( this.RockContext )
-                .Queryable( "PersonAlias" )
-                .Where( a =>
-                    a.Occurrence.ScheduleId.HasValue &&
-                    a.Occurrence.GroupId.HasValue &&
-                    a.Occurrence.LocationId.HasValue &&
-                    a.PersonAlias != null &&
-                    a.DidAttend.HasValue &&
-                    a.DidAttend.Value &&
-                    a.StartDateTime > today &&
-                    !a.EndDateTime.HasValue &&
-                    ScheduleIdsActive.Contains( a.Occurrence.ScheduleId.Value ) &&
-                    groupIds.Contains( a.Occurrence.GroupId.Value ) )
-                .ToList();
-            }
-            else
-            {
-                ActiveAttendance = new AttendanceService( this.RockContext )
-                .Queryable( "PersonAlias" )
-                .Where( a =>
-                    a.ScheduleId.HasValue &&
-                    a.GroupId.HasValue &&
-                    a.LocationId.HasValue &&
-                    a.PersonAlias != null &&
-                    a.DidAttend.HasValue &&
-                    a.DidAttend.Value &&
-                    a.StartDateTime > today &&
-                    !a.EndDateTime.HasValue &&
-                    ScheduleIdsActive.Contains( a.ScheduleId.Value ) &&
-                    groupIds.Contains( a.GroupId.Value ) )
-                .ToList();
-            }
+            ActiveAttendance = new AttendanceService( this.RockContext )
+            .Queryable( "PersonAlias" )
+            .Where( a =>
+                a.PersonAlias != null &&
+                a.DidAttend.HasValue &&
+                a.DidAttend.Value &&
+                a.StartDateTime > today &&
+                !a.EndDateTime.HasValue )
+            .ToList()
+            .Where( a =>
+                a.Occurrence.ScheduleId.HasValue &&
+                a.Occurrence.LocationId.HasValue &&
+                a.Occurrence.GroupId.HasValue &&
+                ScheduleIdsActive.Contains( a.Occurrence.ScheduleId.Value ) &&
+                groupIds.Contains( a.Occurrence.GroupId.Value ) )
+            .ToList();
 
             //
             // Build the list of all GroupLocationSchedule records related to our groups.
@@ -236,7 +218,7 @@ namespace com.shepherdchurch.CheckinMap
             var activeScheduleIds = GroupLocations
                 .Where( gl => gl.GroupId == groupId )
                 .SelectMany( gl => gl.Schedules )
-                .Where( s => s.IsScheduleOrCheckInActive )
+                .Where( s => s.WasScheduleOrCheckInActive( RockDateTime.Now ) )
                 .Select( s => s.Id )
                 .ToList();
 
@@ -246,8 +228,8 @@ namespace com.shepherdchurch.CheckinMap
             }
 
             var currentAttendeeIds = ActiveAttendance.Where( a =>
-                    activeScheduleIds.Contains( a.ScheduleId.Value ) &&
-                    a.GroupId.Value == groupId )
+                    activeScheduleIds.Contains( a.Occurrence.ScheduleId.Value ) &&
+                    a.Occurrence.GroupId.Value == groupId )
                 .Select( a => a.PersonAlias.PersonId );
             personIds.AddRange( currentAttendeeIds );
 
@@ -282,8 +264,7 @@ namespace com.shepherdchurch.CheckinMap
                 //
                 foreach ( Group grp in childGroups )
                 {
-                    int minNeed, maxNeed;
-                    count += GetNeedForGroup( grp, out minNeed, out maxNeed );
+                    count += GetNeedForGroup( grp, out int minNeed, out int maxNeed );
                     minimumNeed += minNeed;
                     maximumNeed += maxNeed;
                 }
@@ -328,9 +309,8 @@ namespace com.shepherdchurch.CheckinMap
         /// <returns>An integer identifying the AttributeId in this group for the given key. 0 if not found.</returns>
         private static int GetAttributeIdForGroup( RockContext rockContext, Group group, string attributeKey )
         {
-            Rock.Web.Cache.RockMemoryCache cache = Rock.Web.Cache.RockMemoryCache.Default;
             string cacheKey = string.Format( "com.shepherdchurch.checkinmap.attribute_{0}_{1}", attributeKey, group.Id );
-            var val = cache.Get( cacheKey );
+            var val = Rock.Web.Cache.RockCache.Get( cacheKey );
 
             if ( val == null )
             {
@@ -348,7 +328,7 @@ namespace com.shepherdchurch.CheckinMap
                 if ( attribute != null )
                 {
                     val = attribute.Id;
-                    cache.Add( cacheKey, val, DateTime.Now.AddMinutes( 10 ) );
+                    Rock.Web.Cache.RockCache.AddOrUpdate( cacheKey, string.Empty, val, DateTime.Now.AddMinutes( 10 ) );
 
                     return attribute.Id;
                 }
@@ -379,7 +359,7 @@ namespace com.shepherdchurch.CheckinMap
 
             if ( val == null )
             {
-                var attribute = Rock.Web.Cache.AttributeCache.Read( attributeId );
+                var attribute = Rock.Web.Cache.AttributeCache.Get( attributeId );
 
                 return attribute != null ? attribute.DefaultValue : string.Empty;
             }
@@ -433,7 +413,7 @@ namespace com.shepherdchurch.CheckinMap
                     {
                         if ( attribute == null )
                         {
-                            attribute = Rock.Web.Cache.AttributeCache.Read( attributeId );
+                            attribute = Rock.Web.Cache.AttributeCache.Get( attributeId );
                         }
 
                         attributeValues.Add( id, attribute != null ? attribute.DefaultValue : string.Empty );
@@ -456,15 +436,13 @@ namespace com.shepherdchurch.CheckinMap
             Template template;
             LavaItem servingItem = new LavaItem();
             ImageMapItem item = new ImageMapItem();
-            int minNeed;
-            int maxNeed;
 
             //
             // Setup the information in the serving item to pass to the Lava filter, also used by later
             // checks in this method.
             //
             servingItem.Group = group;
-            servingItem.Need = GetNeedForGroup( group, out minNeed, out maxNeed );
+            servingItem.Need = GetNeedForGroup( group, out int minNeed, out int maxNeed );
             servingItem.Minimum = minNeed;
             servingItem.Maximum = maxNeed;
             var people = GetAttendanceForGroupId( group.Id );
@@ -525,7 +503,7 @@ namespace com.shepherdchurch.CheckinMap
             //
             item.Title = template.InstanceAssigns["Title"].ToString();
             item.CssClass = template.InstanceAssigns["CssClass"].ToString();
-            item.Url = template.InstanceAssigns["Url"] != null ? template.InstanceAssigns["Url"].ToString() : null;
+            item.Url = template.InstanceAssigns["Url"]?.ToString();
             item.PositionX = GroupPositionXValues[group.Id];
             item.PositionY = GroupPositionYValues[group.Id];
             item.Identifier = group.Guid.ToString();
