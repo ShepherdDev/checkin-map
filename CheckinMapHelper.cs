@@ -17,7 +17,7 @@ namespace com.shepherdchurch.CheckinMap
     /// </summary>
     public class CheckinMapHelper
     {
-        private RockContext RockContext;
+        private readonly RockContext RockContext;
         private List<Group> Groups = null;
         private List<GroupLocation> GroupLocations = null;
         private List<GroupLocationScheduleId> GroupLocationSchedules = null;
@@ -77,7 +77,7 @@ namespace com.shepherdchurch.CheckinMap
             //
             // Get all the possible groups we will work with in our processing.
             //
-            Groups = new GroupService( RockContext ).GetAllDescendents( groupId ).ToList();
+            Groups = new GroupService( RockContext ).GetAllDescendentGroups( groupId, false ).ToList();
             var groupIds = Groups.Select( g => g.Id ).ToList();
 
             //
@@ -337,34 +337,6 @@ namespace com.shepherdchurch.CheckinMap
             }
 
             return ( int ) val;
-        }
-
-        /// <summary>
-        /// Helper method to load a single attribute value for the given group.
-        /// </summary>
-        /// <param name="rockContext">The database context to operate in.</param>
-        /// <param name="group">The Group object to load the attribute Id for.</param>
-        /// <param name="attributeKey">The attribute key to process for.</param>
-        /// <returns>The raw textual representation of the value.</returns>
-        private static string GetAttributeValue( RockContext rockContext, Group group, string attributeKey )
-        {
-            int attributeId = GetAttributeIdForGroup( rockContext, group, attributeKey );
-
-            var val = new AttributeValueService( rockContext )
-                .Queryable()
-                .AsNoTracking()
-                .Where( av => av.AttributeId == attributeId && av.EntityId == group.Id )
-                .Select( av => av.Value )
-                .FirstOrDefault();
-
-            if ( val == null )
-            {
-                var attribute = Rock.Web.Cache.AttributeCache.Get( attributeId );
-
-                return attribute != null ? attribute.DefaultValue : string.Empty;
-            }
-
-            return val;
         }
 
         /// <summary>
